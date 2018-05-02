@@ -42,7 +42,8 @@
  * @author     Jason Tran <jasontra@usc.edu>
  * @author     Bhaskar Krishnachari <bkrishna@usc.edu>
  */
-
+#include "m3pi.h"
+#include "mbed.h"
 #include "LEDThread.h"
 #include "MQTTmbed.h"
 #include "MQTTNetwork.h"
@@ -54,6 +55,8 @@ Mail<MailMsg, LEDTHREAD_MAILBOX_SIZE> LEDMailbox;
 static DigitalOut led2(LED2);
 
 static const char *topic = "m3pi-mqtt-ee250/led-thread";
+
+extern void movement(char command, char speed, int delta_t);
 
 void LEDThread(void *args) 
 {
