@@ -54,9 +54,10 @@ Mail<MailMsg, LEDTHREAD_MAILBOX_SIZE> LEDMailbox;
 
 static DigitalOut led2(LED2);
 
-static const char *topic = "m3pi-mqtt-ee250/led-thread";
+static const char *topic = "anrg-pi5/led-thread";
 
 extern void movement(char command, char speed, int delta_t);
+
 
 void LEDThread(void *args) 
 {
@@ -66,6 +67,7 @@ void LEDThread(void *args)
     osEvent evt;
     char pub_buf[16];
 
+    //printf("Hello world1");
 
     while(1) {
 
@@ -73,10 +75,12 @@ void LEDThread(void *args)
 
         if(evt.status == osEventMail) {
             msg = (MailMsg *)evt.value.p;
+            //printf("Hello world2");
+            //movement('s', 10, 1000);
 
             /* the second byte in the message denotes the action type */
             switch (msg->content[1]) {
-                case LED_THR_PUBLISH_MSG:
+                /*case '0':
                     printf("LEDThread: received command to publish to topic"
                            "m3pi-mqtt-example/led-thread\n");
                     pub_buf[0] = 'h';
@@ -86,20 +90,29 @@ void LEDThread(void *args)
                     message.dup = false;
                     message.payload = (void*)pub_buf;
                     message.payloadlen = 2; //MQTTclient.h takes care of adding null char?
-                    /* Lock the global MQTT mutex before publishing */
+                    /* Lock the global MQTT mutex before publishing 
                     mqttMtx.lock();
                     client->publish(topic, message);
                     mqttMtx.unlock();
+                    break; */
+                case '0':
+                    movement('s', 25, 1000);
+                    printf("\tFORWARD!!!!\t");
                     break;
-                case LED_ON_ONE_SEC:
-                    printf("LEDThread: received message to turn LED2 on for"
+
+                case '1':
+                    /*printf("LEDThread: received message to turn LED2 on for"
                            "one second...\n");
                     led2 = 1;
                     wait(1);
                     led2 = 0;
+                    break; */
+                    movement('w', 25, 1000);
+                    printf("\tBACKWARD\t");
                     break;
-                case LED_BLINK_FAST:
-                    printf("LEDThread: received message to blink LED2 fast for"
+
+                case '2':
+                    /*printf("LEDThread: received message to blink LED2 fast for"
                            "one second...\n");
                     for(int i = 0; i < 10; i++)
                     {
@@ -107,7 +120,21 @@ void LEDThread(void *args)
                         wait(0.1);
                     }
                     led2 = 0;
+                    break; */
+
+                    movement('a', 25, 1000);
+                    printf("\tLEFT\t");
                     break;
+
+                case '3':
+                    movement('d', 25, 1000);
+                    printf("\tRIGHT\t");
+                    break;
+
+                case '4':
+                    printf("\tSTOP\t");
+                    break;
+
                 default:
                     printf("LEDThread: invalid message\n");
                     break;

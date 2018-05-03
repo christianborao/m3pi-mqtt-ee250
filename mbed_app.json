@@ -16,10 +16,10 @@
             "value": true
         },
         "wifi-ssid": {
-            "value": "\"ee-250-2.4ghz\""
+            "value": "\"Sofia 2.4 GHz\""
         },
         "wifi-password": {
-            "value": "\"ee250@vhe205s\""
+            "value": "\"8183219332\""
         }
     },
     "target_overrides": {

@@ -82,7 +82,7 @@ m3pi m3pi(p23, p9, p10);
  */
 Mutex mqttMtx;
 
-static char *topic = "m3pi-mqtt-ee250";
+static char *topic = "anrg-pi5/led-thread";
 
 /**
  * @brief      controls movement of the 3pi
@@ -143,7 +143,7 @@ void messageArrived(MQTT::MessageData& md)
        callback returns */
     switch(fwdTarget)
     {
-        case FWD_TO_PRINT_THR:
+        case '1':
             printf("fwding to print thread\n");
 
             /* allocate the memory for a piece of mail */
@@ -161,7 +161,7 @@ void messageArrived(MQTT::MessageData& md)
             /* put the piece of mail into the target thread's mailbox */
             getPrintThreadMailbox()->put(msg);
             break;
-        case FWD_TO_LED_THR:
+        case '0':
             printf("fwding to led thread\n");
             msg = getLEDThreadMailbox()->alloc();
             if (!msg) {
@@ -202,6 +202,9 @@ int main()
     // movement('s', 25, 100);
     // movement('s', 25, 100);
     // movement('s', 25, 100);
+
+    long int voltage = 0;
+    int distance = 0;
 
     wait(1); //delay startup 
     printf("Resetting ESP8266 Hardware...\n");
@@ -273,6 +276,8 @@ int main()
      have MQTTAsync, but some effort is needed to adapt mbed OS libraries to
      be used by the MQTTAsync library. Please do NOT do anything else in this
      thread. Let it serve as your background MQTT thread. */
+    AnalogIn Ain(p15);
+
     while(1) {
         Thread::wait(1000);
         printf("main: yielding...\n", client.isConnected());
@@ -282,6 +287,11 @@ int main()
 
         /* yield() needs to be called at least once per keepAliveInterval. */
         client.yield(1000);
+
+        /*voltage = Ain.read();
+        	distance = voltage;
+        	printf("Distance: %d \n cm", distance);
+        	client.publish("anrg-pi5/Ultrasonic", distance); */
     }
 
     return 0;
