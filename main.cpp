@@ -82,10 +82,13 @@ m3pi m3pi(p23, p9, p10);
  */
 Mutex mqttMtx;
 
-static char *topic = "anrg-pi5/led-thread";
-static char *topic2 = "anrg-pi5/Ultrasonic";
+//led-thread is used for the movement features (left, right, back, forward)
+//
+
+static char *topic = "anrg-pi5/led-thread"; //for movement
+static char *topic2 = "anrg-pi5/Ultrasonic"; //for reading the ultrasonic data
 char pub_buf[16];
-bool roomba; //rooma feature
+bool roomba; //for toggling the roomba feature
 
 /**
  * @brief      controls movement of the 3pi
@@ -146,17 +149,17 @@ void messageArrived(MQTT::MessageData& md)
        callback returns */
     switch(fwdTarget)
     {
-        case '3':
+        case '3': //roomba was toggled OFF on the P2UX app
         	roomba = false;
         	printf("Roomba off!");
         	break;
 
-        case '2':
+        case '2': //roomba was toggled ON on the P2UX app
         	roomba = true;
         	printf("Roomba on!");
         	break;
 
-        case '1':
+        case '1': //we never ended up using this
             printf("fwding to print thread\n");
 
             /* allocate the memory for a piece of mail */
@@ -174,6 +177,10 @@ void messageArrived(MQTT::MessageData& md)
             /* put the piece of mail into the target thread's mailbox */
             getPrintThreadMailbox()->put(msg);
             break;
+        
+        //if '0' was received, then we know that we pressed one of the movement
+        //buttons and thus led-thread will be called
+
         case '0':
             //printf("fwding to led thread\n");
             msg = getLEDThreadMailbox()->alloc();
@@ -211,11 +218,12 @@ int main()
     // movement('d', 25, 100);
     // movement('d', 25, 100);
     // movement('d', 25, 100);
-    //movement('s', 25, 3000);
+    // movement('s', 25, 3000);
     // movement('s', 25, 100);
     // movement('s', 25, 100);
     // movement('s', 25, 100);
 
+    //voltage and distance are used for the ultrasonic data 
     float voltage = 0;
     int distance = 0;
 
@@ -304,11 +312,17 @@ int main()
         /* yield() needs to be called at least once per keepAliveInterval. */
         client.yield(1000);
 
+        
+        //read the data from the ultrasonic sensor and convert it to a 
+        //meaningful distance number
         AnalogIn Ain(p15);
         voltage = Ain.read();
         distance = voltage * 2.52 / 0.0064;
 
 		printf("\tdistance: %d ", distance, "\t");
+		
+		//format the distance so that we can publish it to P2UX
+
 		if(distance >= 100){
 	        pub_buf[0] = (distance / 10) + 48;
 	        pub_buf[1] = ((distance / 10) % 10) + 48;
@@ -335,27 +349,25 @@ int main()
         /* Lock the global MQTT mutex before publishing */
        
         mqttMtx.lock();
-        client.publish(topic2, message);
+        client.publish(topic2, message); //publish the distance
         mqttMtx.unlock();
 
         if (roomba) { //will execute if roomba is selected
 
-        	if (distance < 15) {
+        	if (distance < 15) { //if an object is too close 
         		printf("TURNING LEFT");
         		movement('w', 25, 1000);
         		movement('a', 25, 300);
         	}
 
-        	else {  
-        		//printf("Roomba success!!");
-        		//movement('s', 25, 1000);
+        	else { //if no object is too close, move forward indefinitely
         		m3pi.forward(20);
 
-        		
         	}
 
         }
-        if(!roomba) {
+
+        if(!roomba) { //if Roomba is deselected, make the m3pi stop
         		m3pi.stop();
         		printf("STOP");
         	}

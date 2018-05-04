@@ -55,7 +55,6 @@ Mail<MailMsg, LEDTHREAD_MAILBOX_SIZE> LEDMailbox;
 static DigitalOut led2(LED2);
 
 static const char *topic = "anrg-pi5/led-thread";
-static const char *topic2 = "anrg-pi5/Ultrasonic";
 
 extern void movement(char command, char speed, int delta_t);
 
@@ -70,103 +69,38 @@ void LEDThread(void *args)
     osEvent evt;
     char pub_buf[16];
 
-    //printf("Hello world1");
-
     while(1) {
 
         evt = LEDMailbox.get();
 
-       /* AnalogIn Ain(p15);
-        voltage = Ain.read();
-        distance = voltage * 2.38 / 0.0032;
-
-printf("\tdistance: ", distance, "\t");
-        pub_buf[0] = (distance / 10) + 48;
-        pub_buf[1] = ((distance / 10) % 10) +48;
-        pub_buf[2] = (distance % 10) + 48;
-
-        //printf(pub_buf[2],pub_buf[1],pub_buf[0]);
-
-        message.qos = MQTT::QOS0;
-        message.retained = false;
-        message.dup = false;
-        message.payload = (void*)pub_buf;
-        message.payloadlen = 3; //MQTTclient.h takes care of adding null char?
-        /* Lock the global MQTT mutex before publishing 
-        mqttMtx.lock();
-        client->publish(topic, message);
-        mqttMtx.unlock();
-
-*/
         if(evt.status == osEventMail) {
             msg = (MailMsg *)evt.value.p;
-            //printf("Hello world2");
-            //movement('s', 10, 1000);
-
-
-            
-
 
             /* the second byte in the message denotes the action type */
             switch (msg->content[1]) {
-                /*case '0':
-                    printf("LEDThread: received command to publish to topic"
-                           "m3pi-mqtt-example/led-thread\n");
-                    
-                    break; */
-                case '0':
+
+                //this is where we handle our movement packets
+                //the printf statements are so we can test in our terminal
+
+                case '0': //'00' was sent (move forward)
                     movement('s', 25, 1000);
                     printf("\tFORWARD!!!!\t");
                     break;
 
-                case '1':
-                    /*printf("LEDThread: received message to turn LED2 on for"
-                           "one second...\n");
-                    led2 = 1;
-                    wait(1);
-                    led2 = 0;
-                    break; */
+                case '1': //'01' was sent (move backward)
                     movement('w', 25, 1000);
                     printf("\tBACKWARD\t");
                     break;
 
-                case '2':
-                    /*printf("LEDThread: received message to blink LED2 fast for"
-                           "one second...\n");
-                    for(int i = 0; i < 10; i++)
-                    {
-                        led2 = !led2;
-                        wait(0.1);
-                    }
-                    led2 = 0;
-                    break; */
-
+                case '2': //'02' was sent (move left)
                     movement('a', 25, 300);
                     printf("\tLEFT\t");
                     break;
 
-                case '3':
+                case '3': //'03' was sent (move right)
                     movement('d', 25, 300);
                     printf("\tRIGHT\t");
                     break;
-
-                case '4':
-                    printf("\tSTOP\t");
-                    break;
-
-                // Roomba
-                case '5':
-                    printf("\tRoomba\t");
-                  /*  while(1){
-                        if(!(distance < 25)){
-                            movement('s',10,50);
-                            printf("\tMoving straight\t");
-                        }
-                        else{
-                            movement('a',10,50);
-                            printf("\tTurning left\t");
-                        }
-                    } */
 
                 default:
                     printf("LEDThread: invalid message\n");
