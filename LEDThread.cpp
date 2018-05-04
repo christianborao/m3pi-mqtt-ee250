@@ -55,9 +55,12 @@ Mail<MailMsg, LEDTHREAD_MAILBOX_SIZE> LEDMailbox;
 static DigitalOut led2(LED2);
 
 static const char *topic = "anrg-pi5/led-thread";
+static const char *topic2 = "anrg-pi5/Ultrasonic";
 
 extern void movement(char command, char speed, int delta_t);
 
+int distance;
+float voltage;
 
 void LEDThread(void *args) 
 {
@@ -73,27 +76,43 @@ void LEDThread(void *args)
 
         evt = LEDMailbox.get();
 
+       /* AnalogIn Ain(p15);
+        voltage = Ain.read();
+        distance = voltage * 2.38 / 0.0032;
+
+printf("\tdistance: ", distance, "\t");
+        pub_buf[0] = (distance / 10) + 48;
+        pub_buf[1] = ((distance / 10) % 10) +48;
+        pub_buf[2] = (distance % 10) + 48;
+
+        //printf(pub_buf[2],pub_buf[1],pub_buf[0]);
+
+        message.qos = MQTT::QOS0;
+        message.retained = false;
+        message.dup = false;
+        message.payload = (void*)pub_buf;
+        message.payloadlen = 3; //MQTTclient.h takes care of adding null char?
+        /* Lock the global MQTT mutex before publishing 
+        mqttMtx.lock();
+        client->publish(topic, message);
+        mqttMtx.unlock();
+
+*/
         if(evt.status == osEventMail) {
             msg = (MailMsg *)evt.value.p;
             //printf("Hello world2");
             //movement('s', 10, 1000);
+
+
+            
+
 
             /* the second byte in the message denotes the action type */
             switch (msg->content[1]) {
                 /*case '0':
                     printf("LEDThread: received command to publish to topic"
                            "m3pi-mqtt-example/led-thread\n");
-                    pub_buf[0] = 'h';
-                    pub_buf[1] = 'i';
-                    message.qos = MQTT::QOS0;
-                    message.retained = false;
-                    message.dup = false;
-                    message.payload = (void*)pub_buf;
-                    message.payloadlen = 2; //MQTTclient.h takes care of adding null char?
-                    /* Lock the global MQTT mutex before publishing 
-                    mqttMtx.lock();
-                    client->publish(topic, message);
-                    mqttMtx.unlock();
+                    
                     break; */
                 case '0':
                     movement('s', 25, 1000);
@@ -122,18 +141,32 @@ void LEDThread(void *args)
                     led2 = 0;
                     break; */
 
-                    movement('a', 25, 1000);
+                    movement('a', 25, 300);
                     printf("\tLEFT\t");
                     break;
 
                 case '3':
-                    movement('d', 25, 1000);
+                    movement('d', 25, 300);
                     printf("\tRIGHT\t");
                     break;
 
                 case '4':
                     printf("\tSTOP\t");
                     break;
+
+                // Roomba
+                case '5':
+                    printf("\tRoomba\t");
+                  /*  while(1){
+                        if(!(distance < 25)){
+                            movement('s',10,50);
+                            printf("\tMoving straight\t");
+                        }
+                        else{
+                            movement('a',10,50);
+                            printf("\tTurning left\t");
+                        }
+                    } */
 
                 default:
                     printf("LEDThread: invalid message\n");

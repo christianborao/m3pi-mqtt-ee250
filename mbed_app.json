@@ -13,13 +13,13 @@
             "value": "p27"
         },
         "esp8266-debug": {
-            "value": true
+            "value": false
         },
         "wifi-ssid": {
-            "value": "\"Sofia 2.4 GHz\""
+            "value": "\"ee-250-2.4ghz\""
         },
         "wifi-password": {
-            "value": "\"8183219332\""
+            "value": "\"ee250@vhe205\""
         }
     },
     "target_overrides": {

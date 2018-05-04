@@ -83,6 +83,9 @@ m3pi m3pi(p23, p9, p10);
 Mutex mqttMtx;
 
 static char *topic = "anrg-pi5/led-thread";
+static char *topic2 = "anrg-pi5/Ultrasonic";
+char pub_buf[16];
+bool roomba; //rooma feature
 
 /**
  * @brief      controls movement of the 3pi
@@ -143,6 +146,16 @@ void messageArrived(MQTT::MessageData& md)
        callback returns */
     switch(fwdTarget)
     {
+        case '3':
+        	roomba = false;
+        	printf("OFF");
+        	break;
+
+        case '2':
+        	roomba = true;
+        	printf("Roomba on!");
+        	break;
+
         case '1':
             printf("fwding to print thread\n");
 
@@ -162,7 +175,7 @@ void messageArrived(MQTT::MessageData& md)
             getPrintThreadMailbox()->put(msg);
             break;
         case '0':
-            printf("fwding to led thread\n");
+            //printf("fwding to led thread\n");
             msg = getLEDThreadMailbox()->alloc();
             if (!msg) {
                 printf("led thread mailbox full!\n");
@@ -203,7 +216,7 @@ int main()
     // movement('s', 25, 100);
     // movement('s', 25, 100);
 
-    long int voltage = 0;
+    float voltage = 0;
     int distance = 0;
 
     wait(1); //delay startup 
@@ -276,7 +289,10 @@ int main()
      have MQTTAsync, but some effort is needed to adapt mbed OS libraries to
      be used by the MQTTAsync library. Please do NOT do anything else in this
      thread. Let it serve as your background MQTT thread. */
-    AnalogIn Ain(p15);
+    //AnalogIn Ain(p15);
+    
+    MailMsg *msg;
+    MQTT::Message message;
 
     while(1) {
         Thread::wait(1000);
@@ -288,11 +304,63 @@ int main()
         /* yield() needs to be called at least once per keepAliveInterval. */
         client.yield(1000);
 
-        /*voltage = Ain.read();
-        	distance = voltage;
-        	printf("Distance: %d \n cm", distance);
-        	client.publish("anrg-pi5/Ultrasonic", distance); */
+        AnalogIn Ain(p15);
+        voltage = Ain.read();
+        distance = voltage * 2.52 / 0.0064;
+
+		printf("\tdistance: %d ", distance, "\t");
+		if(distance >= 100){
+	        pub_buf[0] = (distance / 10) + 48;
+	        pub_buf[1] = ((distance / 10) % 10) + 48;
+	        pub_buf[2] = (distance % 10) + 48;
+	        pub_buf[3] = ' ';
+	        pub_buf[4] = 'c';
+	        pub_buf[5] = 'm';
+	     }
+	     else{
+	     	pub_buf[0] = (distance / 10) + 48;
+	        pub_buf[1] = (distance  % 10) + 48;
+	        pub_buf[2] = ' ';
+	        pub_buf[3] = 'c';
+	        pub_buf[4] = 'm';
+	     }
+        //printf(pub_buf[2],pub_buf[1],pub_buf[0]);
+
+        message.qos = MQTT::QOS0;
+        message.retained = false;
+        message.dup = false;
+        message.payload = (void*)pub_buf;
+        message.payloadlen = 5; //MQTTclient.h takes care of adding null char?
+        
+        /* Lock the global MQTT mutex before publishing */
+       
+        mqttMtx.lock();
+        client.publish(topic2, message);
+        mqttMtx.unlock();
+
+        if (roomba) { //will execute if roomba is selected
+
+        	if (distance < 15) {
+        		printf("TURNING LEFT");
+        		movement('w', 25, 1000);
+        		movement('a', 25, 300);
+        	}
+
+        	else {  
+        		//printf("Roomba success!!");
+        		//movement('s', 25, 1000);
+        		m3pi.forward(20);
+
+        		
+        	}
+
+        }
+        if(!roomba) {
+        		m3pi.stop();
+        		printf("STOP");
+        	}
     }
+
 
     return 0;
 }
