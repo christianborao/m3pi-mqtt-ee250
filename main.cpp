@@ -148,7 +148,7 @@ void messageArrived(MQTT::MessageData& md)
     {
         case '3':
         	roomba = false;
-        	printf("OFF");
+        	printf("Roomba off!");
         	break;
 
         case '2':
